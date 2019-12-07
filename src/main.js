@@ -4,16 +4,13 @@ import {createBoardTemplate} from './components/task-list.js';
 import {createTaskTemplate} from './components/task-card.js';
 import {createEditTaskTemplate} from './components/task-form';
 import {createLoadMoreButtonTemplate} from './components/load-more-button';
-import {generateFilters} from "./mock/filter";
-import {generateTask, generateTasks} from "./mock/task";
+import {generateFilters} from './mock/filter.js';
+import {generateTask, generateTasks} from './mock/task.js';
+import {render, RenderPosition} from "./utils";
 
 const TASK_COUNT = 22;
 const SHOWING_TASKS_COUNT_ON_START = 8;
 const SHOWING_TASKS_COUNT_BY_BUTTON = 8;
-
-const render = (container, template, place) => {
-  container.insertAdjacentHTML(place, template);
-};
 
 const siteMainElement = document.querySelector(`.main`);
 const siteHeaderElement = siteMainElement.querySelector(`.main__control`);
