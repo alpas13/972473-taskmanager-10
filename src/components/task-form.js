@@ -1,5 +1,5 @@
 import {COLORS, DAYS, MONTH_NAMES} from "../const";
-import {formatTime} from "../utils";
+import {formatTime, createElement} from "../utils";
 
 const createColorsMarkup = (colors, currentColor) => {
   return colors
@@ -55,7 +55,7 @@ const createHashtags = (tags) => {
       }).join(`\n`);
 };
 
-export const createEditTaskTemplate = (task) => {
+const createEditTaskTemplate = (task) => {
   const {description, tags, dueDate, color, repeatingDays} = task;
 
   const isExpired = dueDate instanceof Date && dueDate < Date.now();
@@ -98,7 +98,7 @@ export const createEditTaskTemplate = (task) => {
                     date: <span class="card__date-status">${isDateShowing ? `yes` : `no`}</span>
                   </button>
   
-                  ${ isDateShowing ? `<fieldset class="card__date-deadline">
+                  ${isDateShowing ? `<fieldset class="card__date-deadline">
                         <label class="card__input-deadline-wrap">
                           <input
                             class="card__date"
@@ -153,3 +153,26 @@ export const createEditTaskTemplate = (task) => {
         </form>
       </article>`);
 };
+
+export default class Form {
+  constructor(task) {
+    this._task = task;
+    this._element = null;
+  }
+
+  getTemplate() {
+    return createEditTaskTemplate(this._task);
+  }
+
+  getElement() {
+    if (!this._element) {
+      this._element = createElement(this.getTemplate());
+    }
+
+    return this._element;
+  }
+
+  removeElement() {
+    this._element = null;
+  }
+}
