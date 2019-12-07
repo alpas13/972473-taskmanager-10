@@ -1,78 +1,26 @@
 import {COLORS, DAYS, MONTH_NAMES} from "../const";
 import {formatTime, createElement} from "../utils";
 
-const createColorsMarkup = (colors, currentColor) => {
-  return colors
-      .map((color) => {
-        return (`<input
-          type="radio"
-          id="color-${color}-4"
-          class="card__color-input card__color-input--${color} visually-hidden"
-          name="color"
-          value="${color}"
-          ${currentColor === color ? `checked` : ``}
-        />
-        <label
-          for="color-${color}-4"
-          class="card__color card__color--${color}"
-          >${color}</label
-        >`);
-      }).join(`\n`);
-};
+export default class Form {
+  constructor(task) {
+    this._task = task;
+    this._element = null;
+  }
 
-const createRepeatingDaysMarkup = (days, repeatingDay) => {
-  return days
-      .map((day) => {
-        const isChecked = repeatingDay[day];
-        return (`<input class="visually-hidden card__repeat-day-input"
-                   type="checkbox"
-                   id="repeat-${day}-4"
-                   name="repeat"
-                   value="${day}"
-                   ${isChecked ? `checked` : ``} />
-                   <label class="card__repeat-day" for="repeat-${day}-4">
-                   ${day}</label>`);
-      }).join(`\n`);
-};
+  getTemplate() {
+    const {description, tags, dueDate, color, repeatingDays} = this._task;
 
-const createHashtags = (tags) => {
-  return Array.from(tags)
-      .map((tag) => {
-        return (`<span class="card__hashtag-inner">
-  <input
-  type="hidden"
-  name="hashtag"
-  value="${tag}"
-  class="card__hashtag-hidden-input"
-  />
-  <p class="card__hashtag-name">
-  #${tag}
-  </p>
-  <button type="button" class="card__hashtag-delete">
-  delete
-  </button>
-  </span>`);
-      }).join(`\n`);
-};
+    const isExpired = dueDate instanceof Date && dueDate < Date.now();
+    const isDateShowing = !!dueDate;
 
-const createEditTaskTemplate = (task) => {
-  const {description, tags, dueDate, color, repeatingDays} = task;
+    const date = isDateShowing ? `${dueDate.getDate()} ${MONTH_NAMES[dueDate.getMonth()]}` : ``;
+    const time = isDateShowing ? `${formatTime(dueDate)}` : ``;
 
-  const isExpired = dueDate instanceof Date && dueDate < Date.now();
-  const isDateShowing = !!dueDate;
+    const isRepeatingTask = Object.values(repeatingDays).some(Boolean);
+    const repeatClass = isRepeatingTask ? `card--repeat` : ``;
+    const deadlineClass = isExpired ? `card--deadline` : ``;
 
-  const date = isDateShowing ? `${dueDate.getDate()} ${MONTH_NAMES[dueDate.getMonth()]}` : ``;
-  const time = isDateShowing ? `${formatTime(dueDate)}` : ``;
-
-  const isRepeatingTask = Object.values(repeatingDays).some(Boolean);
-  const repeatClass = isRepeatingTask ? `card--repeat` : ``;
-  const deadlineClass = isExpired ? `card--deadline` : ``;
-
-  const tagsMarkup = createHashtags(tags);
-  const colorsMarkup = createColorsMarkup(COLORS, color);
-  const repeatingDaysMarkup = createRepeatingDaysMarkup(DAYS, repeatingDays);
-
-  return (`<article class="card card--edit card--${color} ${repeatClass} ${deadlineClass}">
+    return (`<article class="card card--edit card--${color} ${repeatClass} ${deadlineClass}">
       <form class="card__form" method="get">
         <div class="card__inner">
           <div class="card__color-bar">
@@ -116,14 +64,35 @@ const createEditTaskTemplate = (task) => {
   
                   ${isRepeatingTask ? `<fieldset class="card__repeat-days">
                       <div class="card__repeat-days-inner">
-                        ${repeatingDaysMarkup}
+                        ${DAYS.map((day) => (`<input class="visually-hidden card__repeat-day-input"
+                   type="checkbox"
+                   id="repeat-${day}-4"
+                   name="repeat"
+                   value="${day}"
+                   ${repeatingDays[day] ? `checked` : ``} />
+                   <label class="card__repeat-day" for="repeat-${day}-4">
+                   ${day}</label>`)).join(`\n`)}
                       </div>
                     </fieldset>` : ``}
                 </div>
   
                 <div class="card__hashtag">
                   <div class="card__hashtag-list">
-                    ${tagsMarkup}
+                    ${Array.from(tags)
+        .map((tag) => (`<span class="card__hashtag-inner">
+                    <input
+                    type="hidden"
+                    name="hashtag"
+                    value="${tag}"
+                    class="card__hashtag-hidden-input"
+                    />
+                    <p class="card__hashtag-name">
+                    #${tag}
+                    </p>
+                    <button type="button" class="card__hashtag-delete">
+                    delete
+                    </button>
+                    </span>`)).join(`\n`)}
                   </div>
   
                   <label>
@@ -140,11 +109,18 @@ const createEditTaskTemplate = (task) => {
               <div class="card__colors-inner">
                 <h3 class="card__colors-title">Color</h3>
                 <div class="card__colors-wrap">
-                  ${colorsMarkup}
+                  ${COLORS.map((value) => (`<input type="radio"
+                  id="color-${value}-4"
+                  class="card__color-input card__color-input--${value} visually-hidden"
+                  name="color"
+                  value="${value}"
+                  ${color === value ? `checked` : ``}/>
+                  <label for="color-${value}-4"
+                  class="card__color card__color--${value}">
+                  ${value}</label>`)).join(`\n`)}
                 </div>
               </div>
-            </div>
-  
+            </div>  
             <div class="card__status-btns">
               <button class="card__save" type="submit">save</button>
               <button class="card__delete" type="button">delete</button>
@@ -152,16 +128,6 @@ const createEditTaskTemplate = (task) => {
           </div>
         </form>
       </article>`);
-};
-
-export default class Form {
-  constructor(task) {
-    this._task = task;
-    this._element = null;
-  }
-
-  getTemplate() {
-    return createEditTaskTemplate(this._task);
   }
 
   getElement() {

@@ -1,14 +1,12 @@
 import {createElement} from "../utils";
 
-const createLoadMoreButtonTemplate = () => `<button class="load-more" type="button">load more</button>`;
-
 export default class LoadMore {
   constructor() {
     this._element = null;
   }
 
   getTemplate() {
-    return createLoadMoreButtonTemplate();
+    return `<button class="load-more" type="button">load more</button>`;
   }
 
   getElement() {

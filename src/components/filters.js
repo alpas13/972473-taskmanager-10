@@ -1,27 +1,5 @@
 import {createElement} from "../utils";
 
-const createFilterMarkup = (filter, isChecked) => {
-  const {name, count} = filter;
-
-  return `<input
-          type="radio"
-          id="filter__${name}"
-          class="filter__input visually-hidden"
-          name="filter"
-          ${isChecked ? `checked` : ``}
-        />
-        <label for="filter__all" class="filter__label">
-          ${name} <span class="filter__all-count">${count}</span></label
-        >`;
-};
-
-const createFilterTemplate = (filters) => {
-  const filtersMarkup = filters.map((it, i) => createFilterMarkup(it, i === 0)).join(`\n`);
-  return `<section class="main__filter filter container">
-        ${filtersMarkup}
-      </section>`;
-};
-
 export default class Filter {
   constructor(filters) {
     this._filters = filters;
@@ -29,7 +7,18 @@ export default class Filter {
   }
 
   getTemplate() {
-    return createFilterTemplate(this._filters);
+    return `<section class="main__filter filter container">
+        ${this._filters.map((it, i) => (`<input
+          type="radio"
+          id="filter__${it.name}"
+          class="filter__input visually-hidden"
+          name="filter"
+          ${i === 0 ? `checked` : ``}
+        />
+        <label for="filter__all" class="filter__label">
+          ${it.name} <span class="filter__all-count">${it.count}</span></label
+        >`)).join(`\n`)}
+      </section>`;
   }
 
   getElement() {
