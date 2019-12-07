@@ -1,6 +1,6 @@
 export const RenderPosition = {
   AFTERBEGIN: `afterbegin`,
-  BEFORBEGIN: `beforbegin`
+  BEFOREEND: `beforeend`
 };
 
 const castTimeFormat = (value) => {
