@@ -1,35 +1,26 @@
-import {MonthNames} from '../const.js';
-import {formatTime} from '../utils.js';
+import {MONTH_NAMES} from '../const.js';
+import {formatTime, createElement} from '../utils.js';
 
+export default class Card {
+  constructor(task) {
+    this._task = task;
+    this._element = null;
+  }
 
-const createHashtagsMarkup = (hashtags) => {
-  return hashtags
-      .map((hashtag) => {
-        return (`<span class="card__hashtag-inner">
-            <span class="card__hashtag-name">
-              #${hashtag}
-            </span>
-          </span>`
-        );
-      })
-      .join(`\n`);
-};
+  getTemplate() {
+    const {description, tags, dueDate, color, repeatingDays} = this._task;
 
+    const isExpired = dueDate instanceof Date && dueDate < Date.now();
+    const isDateShowing = !!dueDate;
 
-export const createTaskTemplate = (task) => {
-  const {description, tags, dueDate, color, repeatingDays} = task;
+    const date = isDateShowing ? `${dueDate.getDate()} ${MONTH_NAMES[dueDate.getMonth()]}` : ``;
+    const time = isDateShowing ? formatTime(dueDate) : ``;
 
-  const isExpired = dueDate instanceof Date && dueDate < Date.now();
-  const isDateShowing = !!dueDate;
+    const hashtags = Array.from(tags);
+    const repeatClass = Object.values(repeatingDays).some(Boolean) ? `card--repeat` : ``;
+    const deadlineClass = isExpired ? `card--deadline` : ``;
 
-  const date = isDateShowing ? `${dueDate.getDate()} ${MonthNames[dueDate.getMonth()]}` : ``;
-  const time = isDateShowing ? formatTime(dueDate) : ``;
-
-  const hashtags = createHashtagsMarkup(Array.from(tags));
-  const repeatClass = Object.values(repeatingDays).some(Boolean) ? `card--repeat` : ``;
-  const deadlineClass = isExpired ? `card--deadline` : ``;
-
-  return (`<article class="card card--${color} ${repeatClass} ${deadlineClass}">
+    return (`<article class="card card--${color} ${repeatClass} ${deadlineClass}">
       <div class="card__form">
         <div class="card__inner">
           <div class="card__control">
@@ -66,13 +57,29 @@ export const createTaskTemplate = (task) => {
               </div>
               <div class="card__hashtag">
                 <div class="card__hashtag-list">
-                  ${hashtags}
+                  ${hashtags.map((hashtag) => (`<span class="card__hashtag-inner">
+            <span class="card__hashtag-name">
+              #${hashtag}
+            </span>
+          </span>`)).join(`\n`)}
                 </div>
               </div>
             </div>
           </div>
         </div>
       </div>
-    </article>`
-  );
-};
+    </article>`);
+  }
+
+  getElement() {
+    if (!this._element) {
+      this._element = createElement(this.getTemplate());
+    }
+
+    return this._element;
+  }
+
+  remove() {
+    this._element = null;
+  }
+}
