@@ -1,10 +1,11 @@
 import {MONTH_NAMES} from '../const.js';
-import {formatTime, createElement} from '../utils.js';
+import {formatTime} from '../utils/common.js';
+import AbstractComponent from "./abstract-component";
 
-export default class Card {
+export default class Card extends AbstractComponent {
   constructor(task) {
+    super();
     this._task = task;
-    this._element = null;
   }
 
   getTemplate() {
@@ -71,15 +72,7 @@ export default class Card {
     </article>`);
   }
 
-  getElement() {
-    if (!this._element) {
-      this._element = createElement(this.getTemplate());
-    }
-
-    return this._element;
-  }
-
-  remove() {
-    this._element = null;
+  setClickHandler(handler) {
+    this.getElement().querySelector(`.card__btn--edit`).addEventListener(`click`, handler);
   }
 }

@@ -1,10 +1,11 @@
 import {COLORS, DAYS, MONTH_NAMES} from "../const";
-import {formatTime, createElement} from "../utils";
+import {formatTime} from "../utils/common";
+import AbstractComponent from "./abstract-component";
 
-export default class Form {
+export default class Form extends AbstractComponent {
   constructor(task) {
+    super();
     this._task = task;
-    this._element = null;
   }
 
   getTemplate() {
@@ -130,15 +131,7 @@ export default class Form {
       </article>`);
   }
 
-  getElement() {
-    if (!this._element) {
-      this._element = createElement(this.getTemplate());
-    }
-
-    return this._element;
-  }
-
-  removeElement() {
-    this._element = null;
+  setSubmitHandler(handler) {
+    this.getElement().querySelector(`form`).addEventListener(`submit`, handler);
   }
 }
