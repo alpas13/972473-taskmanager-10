@@ -1,9 +1,9 @@
-import {createElement} from "../utils";
+import AbstractComponent from "./abstract-component";
 
-export default class Filter {
+export default class Filter extends AbstractComponent {
   constructor(filters) {
+    super();
     this._filters = filters;
-    this._element = null;
   }
 
   getTemplate() {
@@ -19,17 +19,5 @@ export default class Filter {
           ${it.name} <span class="filter__all-count">${it.count}</span></label
         >`)).join(`\n`)}
       </section>`;
-  }
-
-  getElement() {
-    if (!this._element) {
-      this._element = createElement(this.getTemplate());
-    }
-
-    return this._element;
-  }
-
-  removeElement() {
-    this._elemetn = null;
   }
 }
