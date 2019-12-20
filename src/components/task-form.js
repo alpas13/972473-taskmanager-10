@@ -1,25 +1,38 @@
-import {COLORS, DAYS, MONTH_NAMES} from "../const";
-import {formatTime} from "../utils/common";
-import AbstractComponent from "./abstract-component";
+import {COLORS, DAYS} from "../const.js";
+import {formatTime, formatDate} from "../utils/common.js";
+import AbstractSmartComponent from "./smart-component.js";
+import flatpickr from "flatpickr";
+import 'flatpickr/dist/flatpickr.min.css';
+import 'flatpickr/dist/themes/light.css';
 
-export default class Form extends AbstractComponent {
+export default class Form extends AbstractSmartComponent {
   constructor(task) {
     super();
     this._task = task;
+    this._isDateShowing = !!task.dueDate;
+    this._isRepeatingTask = Object.values(task.repeatingDays).some(Boolean);
+    this._activeRepeatingDays = Object.assign({}, task.repeatingDays);
+    this._flatpickr = null;
+
+    this._applyFlatpickr();
+    this._subscribeOnEvents();
   }
 
   getTemplate() {
-    const {description, tags, dueDate, color, repeatingDays} = this._task;
+    const {description, tags, dueDate, color} = this._task;
 
     const isExpired = dueDate instanceof Date && dueDate < Date.now();
-    const isDateShowing = !!dueDate;
+    const isDateShowing = this._isDateShowing;
 
-    const date = isDateShowing ? `${dueDate.getDate()} ${MONTH_NAMES[dueDate.getMonth()]}` : ``;
+    const date = isDateShowing ? `${formatDate(dueDate)}` : ``;
     const time = isDateShowing ? `${formatTime(dueDate)}` : ``;
 
-    const isRepeatingTask = Object.values(repeatingDays).some(Boolean);
+    const isRepeatingTask = this._isRepeatingTask;
+    const activeRepeatingDays = this._activeRepeatingDays;
     const repeatClass = isRepeatingTask ? `card--repeat` : ``;
     const deadlineClass = isExpired ? `card--deadline` : ``;
+    const isBlockSaveButton = (isDateShowing && isRepeatingTask) ||
+        (isRepeatingTask && !this._isRepeating(activeRepeatingDays));
 
     return (`<article class="card card--edit card--${color} ${repeatClass} ${deadlineClass}">
       <form class="card__form" method="get">
@@ -28,7 +41,7 @@ export default class Form extends AbstractComponent {
               <svg class="card__color-bar-wave" width="100%" height="10">
                 <use xlink:href="#wave"></use>
               </svg>
-            </div>
+            </div>  
   
             <div class="card__textarea-wrap">
               <label>
@@ -70,7 +83,7 @@ export default class Form extends AbstractComponent {
                    id="repeat-${day}-4"
                    name="repeat"
                    value="${day}"
-                   ${repeatingDays[day] ? `checked` : ``} />
+                   ${activeRepeatingDays[day] ? `checked` : ``} />
                    <label class="card__repeat-day" for="repeat-${day}-4">
                    ${day}</label>`)).join(`\n`)}
                       </div>
@@ -123,7 +136,7 @@ export default class Form extends AbstractComponent {
               </div>
             </div>  
             <div class="card__status-btns">
-              <button class="card__save" type="submit">save</button>
+              <button class="card__save" type="submit" ${isBlockSaveButton ? `disabled` : ``}>save</button>
               <button class="card__delete" type="button">delete</button>
             </div>
           </div>
@@ -133,5 +146,71 @@ export default class Form extends AbstractComponent {
 
   setSubmitHandler(handler) {
     this.getElement().querySelector(`form`).addEventListener(`submit`, handler);
+  }
+
+  rerender() {
+    super.rerender();
+
+    this._applyFlatpickr();
+  }
+
+  recoveryListeners() {
+    this._subscribeOnEvents();
+  }
+
+  reset() {
+    const task = this._task;
+
+    this._isDateShowing = !!task.dueDate;
+    this._isRepeatingTask = Object.values(task.repeatingDays).some(Boolean);
+    this._activeRepeatingDays = Object.assign({}, task.repeatingDays);
+
+    this.rerender();
+  }
+
+  _isRepeating(repeatingDays) {
+    return Object.values(repeatingDays).some(Boolean);
+  }
+
+  _applyFlatpickr() {
+    if (this._flatpickr) {
+      this._flatpickr.destroy();
+      this._flatpickr = null;
+    }
+
+    if (this._isDateShowing) {
+      const dateElement = this.getElement().querySelector(`.card__date`);
+      this._flatpickr = flatpickr(dateElement, {
+        altInput: true,
+        allowInput: true,
+        defaultDate: this._task.dueDate,
+      });
+    }
+  }
+
+  _subscribeOnEvents() {
+    const element = this.getElement();
+
+    element.querySelector(`.card__date-deadline-toggle`).addEventListener(`click`, () => {
+      this._isDateShowing = !this._isDateShowing;
+
+      this.rerender();
+    });
+
+    element.querySelector(`.card__repeat-toggle`).addEventListener(`click`, () => {
+      this._isRepeatingTask = !this._isRepeatingTask;
+
+      this.rerender();
+    });
+
+    const repeatDays = element.querySelector(`.card__repeat-days`);
+
+    if (repeatDays) {
+      repeatDays.addEventListener(`change`, (evt) => {
+        this._activeRepeatingDays[evt.target.value] = evt.target.checked;
+
+        this.rerender();
+      });
+    }
   }
 }
