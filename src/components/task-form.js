@@ -1,5 +1,10 @@
 import {COLORS, DAYS} from "../const.js";
-import {formatTime, formatDate} from "../utils/common.js";
+import {
+  formatTime,
+  formatDate,
+  isRepeating,
+  isOverdueDate
+} from "../utils/common.js";
 import AbstractSmartComponent from "./smart-component.js";
 import flatpickr from "flatpickr";
 import 'flatpickr/dist/flatpickr.min.css';
@@ -8,20 +13,27 @@ import 'flatpickr/dist/themes/light.css';
 export default class Form extends AbstractSmartComponent {
   constructor(task) {
     super();
+    this._MIN_DESCRIPTION_LENGTH = 1;
+    this._MAX_DESCRIPTION_LENGTH = 140;
     this._task = task;
     this._isDateShowing = !!task.dueDate;
     this._isRepeatingTask = Object.values(task.repeatingDays).some(Boolean);
     this._activeRepeatingDays = Object.assign({}, task.repeatingDays);
     this._flatpickr = null;
+    this._submitHanler = null;
+    this._deleteButtonClickHandler = null;
+    this._currentDescription = this._task.description;
 
     this._applyFlatpickr();
     this._subscribeOnEvents();
   }
 
   getTemplate() {
-    const {description, tags, dueDate, color} = this._task;
+    const {tags, dueDate, color} = this._task;
 
-    const isExpired = dueDate instanceof Date && dueDate < Date.now();
+    // const description = window.he.encode(this._currentDescription);
+    const description = this._currentDescription;
+    const isExpired = dueDate instanceof Date && isOverdueDate(dueDate, new Date());
     const isDateShowing = this._isDateShowing;
 
     const date = isDateShowing ? `${formatDate(dueDate)}` : ``;
@@ -32,7 +44,7 @@ export default class Form extends AbstractSmartComponent {
     const repeatClass = isRepeatingTask ? `card--repeat` : ``;
     const deadlineClass = isExpired ? `card--deadline` : ``;
     const isBlockSaveButton = (isDateShowing && isRepeatingTask) ||
-        (isRepeatingTask && !this._isRepeating(activeRepeatingDays));
+        (isRepeatingTask && !isRepeating(activeRepeatingDays)) || !this._isAllowableDescriptionLength(description);
 
     return (`<article class="card card--edit card--${color} ${repeatClass} ${deadlineClass}">
       <form class="card__form" method="get">
@@ -144,8 +156,25 @@ export default class Form extends AbstractSmartComponent {
       </article>`);
   }
 
+  removeElement() {
+    if (this._flatpickr) {
+      this._flatpickr.destroy();
+      this._flatpickr = null;
+    }
+
+    super.removeElement();
+  }
+
   setSubmitHandler(handler) {
     this.getElement().querySelector(`form`).addEventListener(`submit`, handler);
+    this._submitHanler = handler;
+  }
+
+  setDeleteButtonClickHandler(handler) {
+    this.getElement().querySelector(`.card__delete`)
+        .addEventListener(`click`, handler);
+
+    this._deleteButtonClickHandler = handler;
   }
 
   rerender() {
@@ -155,7 +184,9 @@ export default class Form extends AbstractSmartComponent {
   }
 
   recoveryListeners() {
+    this.setSubmitHandler(this._submitHanler);
     this._subscribeOnEvents();
+    this.setDeleteButtonClickHandler(this._deleteButtonClickHandler);
   }
 
   reset() {
@@ -168,8 +199,11 @@ export default class Form extends AbstractSmartComponent {
     this.rerender();
   }
 
-  _isRepeating(repeatingDays) {
-    return Object.values(repeatingDays).some(Boolean);
+  getData() {
+    const form = this.getElement().querySelector(`.card__form`);
+    const formData = new FormData(form);
+
+    return this._parseFormData(formData);
   }
 
   _applyFlatpickr() {
@@ -190,6 +224,14 @@ export default class Form extends AbstractSmartComponent {
 
   _subscribeOnEvents() {
     const element = this.getElement();
+
+    element.querySelector(`.card__text`)
+        .addEventListener(`input`, (evt) => {
+          this._currentDescription = evt.target.value;
+
+          const saveButton = this.getElement().querySelector(`.card__save`);
+          saveButton.disabled = !this._isAllowableDescriptionLength(this._currentDescription);
+        });
 
     element.querySelector(`.card__date-deadline-toggle`).addEventListener(`click`, () => {
       this._isDateShowing = !this._isDateShowing;
@@ -212,5 +254,29 @@ export default class Form extends AbstractSmartComponent {
         this.rerender();
       });
     }
+  }
+
+  _isAllowableDescriptionLength(description) {
+    const length = description.length;
+
+    return length >= this._MIN_DESCRIPTION_LENGTH && length <= this._MAX_DESCRIPTION_LENGTH;
+  }
+
+  _parseFormData(formData) {
+    const repeatingDays = DAYS.reduce((acc, day) => {
+      acc[day] = false;
+      return acc;
+    }, {});
+    const date = formData.get(`date`);
+    return {
+      description: formData.get(`text`),
+      color: formData.get(`color`),
+      tags: formData.getAll(`hashtag`),
+      dueDate: date ? new Date(date) : null,
+      repeatingDays: formData.getAll(`repeat`).reduce((acc, it) => {
+        acc[it] = true;
+        return acc;
+      }, repeatingDays),
+    };
   }
 }
