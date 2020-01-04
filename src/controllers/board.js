@@ -59,7 +59,7 @@ export default class BoardController {
   _renderTasks(tasks) {
     const taskListElement = this._tasksComponent.getElement();
 
-    const newTasks = this.renderTasks(taskListElement, tasks.slice(0, this._showedTasksCount), this._onDataChange, this._onViewChange);
+    const newTasks = this.renderTasks(taskListElement, tasks, this._onDataChange, this._onViewChange);
     this._showedTaskControllers = this._showedTaskControllers.concat(newTasks);
     this._showedTasksCount = this._showedTaskControllers.length;
   }
