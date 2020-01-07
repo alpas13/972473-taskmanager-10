@@ -9,6 +9,7 @@ import AbstractSmartComponent from "./smart-component.js";
 import flatpickr from "flatpickr";
 import 'flatpickr/dist/flatpickr.min.css';
 import 'flatpickr/dist/themes/light.css';
+import he from 'he';
 
 export default class Form extends AbstractSmartComponent {
   constructor(task) {
@@ -31,8 +32,7 @@ export default class Form extends AbstractSmartComponent {
   getTemplate() {
     const {tags, dueDate, color} = this._task;
 
-    // const description = window.he.encode(this._currentDescription);
-    const description = this._currentDescription;
+    const description = he.encode(this._currentDescription);
     const isExpired = dueDate instanceof Date && isOverdueDate(dueDate, new Date());
     const isDateShowing = this._isDateShowing;
 

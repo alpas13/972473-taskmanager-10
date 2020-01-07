@@ -1,5 +1,6 @@
 import {formatTime, formatDate, isOverdueDate} from '../utils/common.js';
 import AbstractComponent from "./abstract-component";
+import he from 'he';
 
 export default class Card extends AbstractComponent {
   constructor(task) {
@@ -10,8 +11,7 @@ export default class Card extends AbstractComponent {
   getTemplate() {
     const {description: notSanitizedDescription, tags, dueDate, color, repeatingDays, isFavorite, isArchive} = this._task;
 
-    // const description = window.he.encode(notSanitizedDescription);
-    const description = notSanitizedDescription;
+    const description = he.encode(notSanitizedDescription);
     const isExpired = dueDate instanceof Date && isOverdueDate(dueDate, new Date());
     const isDateShowing = !!dueDate;
 
